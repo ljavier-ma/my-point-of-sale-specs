@@ -1,0 +1,781 @@
+openapi: 3.0.4
+info:
+  title: my-point-of-sale
+  version: 1.0.0
+tags:
+  - name: store
+    description: Store information
+  - name: user
+    description: User information
+  - name: test-login
+    description: Testing
+  - name: products
+    description: Product information
+  - name: movements
+    description: Product movement information
+paths:
+  /store:
+    get:
+      tags:
+        - store
+      summary: Get the information about the store that the user is part of
+      responses:
+        "200":
+          description: Store details
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - name
+                  - settings
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  settings:
+                    type: object
+                    description: Settings loaded from Firebase at the same level as the store name.
+                    required:
+                      - idealPercentageOfProduct
+                      - lowPercentageOfProduct
+                    properties:
+                      idealPercentageOfProduct:
+                        type: number
+                      lowPercentageOfProduct:
+                        type: number
+    patch:
+      tags:
+        - store
+      summary: Update store details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - settings
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                settings:
+                  type: object
+                  required:
+                    - idealPercentageOfProduct
+                    - lowPercentageOfProduct
+                  properties:
+                    idealPercentageOfProduct:
+                      type: number
+                      minimum: 0
+                      exclusiveMaximum: true
+                      maximum: 100
+                    lowPercentageOfProduct:
+                      type: number
+                      minimum: 0
+                      exclusiveMaximum: true
+                      maximum: 100
+      responses:
+        "200":
+          description: Store updated successfully
+        "400":
+          description: Invalid store name or settings values
+  /user:
+    get:
+      tags:
+        - user
+      summary: Get user information
+      responses:
+        "200":
+          description: User details
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - email
+                  - name
+                properties:
+                  id:
+                    type: string
+                  email:
+                    type: string
+                  name:
+                    type: string
+                  isForTesting:
+                    type: boolean
+  /test-login:
+    post:
+      tags:
+        - test-login
+      summary: Log in a test user
+      responses:
+        "200":
+          description: Test login succeeded
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - token
+                properties:
+                  token:
+                    type: string
+        "401":
+          description: Test login failed
+  /products:
+    get:
+      tags:
+        - products
+      summary: Get products with pagination
+      parameters:
+        - name: offset
+          in: query
+          description: Zero-based index of the first product to return
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+        - name: limit
+          in: query
+          description: Maximum number of products to return
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Products retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - products
+                  - totalOfProducts
+                properties:
+                  products:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - id
+                        - barcode
+                        - code
+                        - baseStockAmount
+                        - name
+                        - measurementUnit
+                        - stock
+                        - unitaryPrice
+                        - publicPrice
+                      properties:
+                        id:
+                          type: string
+                        barcode:
+                          type: string
+                        code:
+                          type: string
+                        baseStockAmount:
+                          type: number
+                          format: double
+                        name:
+                          type: string
+                        measurementUnit:
+                          type: string
+                        stock:
+                          type: number
+                          format: double
+                        unitaryPrice:
+                          type: number
+                          format: double
+                        publicPrice:
+                          type: number
+                          format: double
+                  totalOfProducts:
+                    type: number
+              example:
+                products:
+                  - id: "product-1"
+                    barcode: ""
+                    code: "330750.51"
+                    baseStockAmount: 3
+                    name: "ESMALTE S.D. ALUMINIO FINO 3.785 LTS"
+                    measurementUnit: "liter"
+                    stock: 3
+                    unitaryPrice: 273.7
+                    publicPrice: 273.7
+                totalOfProducts: 1
+    post:
+      tags:
+        - products
+      summary: Add a product
+      description: Only name is required. Any omitted optional field is stored as null. Product names must be unique; a supplied barcode or code must also be unique across all products.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                barcode:
+                  type: string
+                  nullable: true
+                  description: Must be unique across all products when supplied.
+                code:
+                  type: string
+                  nullable: true
+                  description: Must be unique across all products when supplied.
+                baseStockAmount:
+                  type: number
+                  format: double
+                  nullable: true
+                name:
+                  type: string
+                  description: Must be unique across all products.
+                measurementUnit:
+                  type: string
+                  nullable: true
+                stock:
+                  type: number
+                  format: double
+                  nullable: true
+                unitaryPrice:
+                  type: number
+                  format: double
+                  nullable: true
+                publicPrice:
+                  type: number
+                  format: double
+                  nullable: true
+      responses:
+        "201":
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - barcode
+                  - code
+                  - baseStockAmount
+                  - name
+                  - measurementUnit
+                  - stock
+                  - unitaryPrice
+                  - publicPrice
+                properties:
+                  id:
+                    type: string
+                  barcode:
+                    type: string
+                  code:
+                    type: string
+                  baseStockAmount:
+                    type: number
+                    format: double
+                  name:
+                    type: string
+                  measurementUnit:
+                    type: string
+                  stock:
+                    type: number
+                    format: double
+                  unitaryPrice:
+                    type: number
+                    format: double
+                  publicPrice:
+                    type: number
+                    format: double
+              example:
+                id: "product-1"
+                barcode: ""
+                code: "330750.51"
+                baseStockAmount: 3
+                name: "ESMALTE S.D. ALUMINIO FINO 3.785 LTS"
+                measurementUnit: "liter"
+                stock: 3
+                unitaryPrice: 273.7
+                publicPrice: 273.7
+        "409":
+          description: A product with the same name, or with the same supplied barcode or code, already exists.
+  /products/search:
+    get:
+      tags:
+        - products
+      summary: Search products by name
+      parameters:
+        - name: name
+          in: query
+          description: Name to search for
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The first 10 products matching the name, at most
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 10
+                items:
+                  type: object
+                  required:
+                    - id
+                    - barcode
+                    - code
+                    - baseStockAmount
+                    - name
+                    - measurementUnit
+                    - stock
+                    - unitaryPrice
+                    - publicPrice
+                  properties:
+                    id:
+                      type: string
+                    barcode:
+                      type: string
+                    code:
+                      type: string
+                    baseStockAmount:
+                      type: number
+                      format: double
+                    name:
+                      type: string
+                    measurementUnit:
+                      type: string
+                    stock:
+                      type: number
+                      format: double
+                    unitaryPrice:
+                      type: number
+                      format: double
+                    publicPrice:
+                      type: number
+                      format: double
+  /products/bellowIdeal:
+    get:
+      tags:
+        - products
+      summary: Get products with stock below the ideal amount and above the low quantity
+      description: Returns products whose stock is below the ideal threshold and above the low threshold, as determined by store settings and each product's baseStockAmount.
+      parameters:
+        - name: offset
+          in: query
+          description: Zero-based index of the first product to return
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+        - name: limit
+          in: query
+          description: Maximum number of products to return
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Products within the specified stock range
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - barcode
+                    - code
+                    - baseStockAmount
+                    - name
+                    - measurementUnit
+                    - stock
+                    - unitaryPrice
+                    - publicPrice
+                  properties:
+                    id:
+                      type: string
+                    barcode:
+                      type: string
+                    code:
+                      type: string
+                    baseStockAmount:
+                      type: number
+                      format: double
+                    name:
+                      type: string
+                    measurementUnit:
+                      type: string
+                    stock:
+                      type: number
+                      format: double
+                    unitaryPrice:
+                      type: number
+                      format: double
+                    publicPrice:
+                      type: number
+                      format: double
+  /products/lowQuantity:
+    get:
+      tags:
+        - products
+      summary: Get products with stock below the low quantity
+      description: Returns products whose stock is below the low threshold, as determined by store settings and each product's baseStockAmount.
+      parameters:
+        - name: offset
+          in: query
+          description: Zero-based index of the first product to return
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+        - name: limit
+          in: query
+          description: Maximum number of products to return
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Products with stock below the low quantity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - id
+                    - barcode
+                    - code
+                    - baseStockAmount
+                    - name
+                    - measurementUnit
+                    - stock
+                    - unitaryPrice
+                    - publicPrice
+                  properties:
+                    id:
+                      type: string
+                    barcode:
+                      type: string
+                    code:
+                      type: string
+                    baseStockAmount:
+                      type: number
+                      format: double
+                    name:
+                      type: string
+                    measurementUnit:
+                      type: string
+                    stock:
+                      type: number
+                      format: double
+                    unitaryPrice:
+                      type: number
+                      format: double
+                    publicPrice:
+                      type: number
+                      format: double
+  /movements:
+    get:
+      tags:
+        - movements
+      summary: Get movements
+      parameters:
+        - name: offset
+          in: query
+          description: Zero-based index of the first movement to return
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+        - name: limit
+          in: query
+          description: Maximum number of movements to return
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Movements retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - movements
+                  - totalOfMovements
+                properties:
+                  movements:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - productDetails
+                        - time
+                        - isMovementAPurchase
+                      properties:
+                        productDetails:
+                          type: array
+                          items:
+                            type: object
+                            required:
+                              - productTotal
+                              - productId
+                              - quantity
+                            properties:
+                              productTotal:
+                                type: number
+                              productId:
+                                type: string
+                              quantity:
+                                type: number
+                        isMovementAPurchase:
+                          type: boolean
+                        time:
+                          type: string
+                          format: date-time
+                  totalOfMovements:
+                    type: number
+    post:
+      tags:
+        - movements
+      summary: Create a movement
+      description: Creates a movement in the database.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productDetails
+                - isMovementAPurchase
+              properties:
+                productDetails:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - productTotal
+                      - productId
+                      - quantity
+                    properties:
+                      productTotal:
+                        type: number
+                      productId:
+                        type: string
+                      quantity:
+                        type: number
+                isMovementAPurchase:
+                  type: boolean
+      responses:
+        "201":
+          description: Movement created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - productDetails
+                  - time
+                  - isMovementAPurchase
+                properties:
+                  id:
+                    type: string
+                  productDetails:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - productTotal
+                        - productId
+                        - quantity
+                      properties:
+                        productTotal:
+                          type: number
+                        productId:
+                          type: string
+                        quantity:
+                          type: number
+                  isMovementAPurchase:
+                    type: boolean
+                  time:
+                    type: string
+                    format: date-time
+  /products/{productId}:
+    delete:
+      tags:
+        - products
+      summary: Delete a product
+      parameters:
+        - name: productId
+          in: path
+          description: ID of the product to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Product deleted successfully
+    patch:
+      tags:
+        - products
+      summary: Update a product
+      parameters:
+        - name: productId
+          in: path
+          description: ID of the product to update
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - barcode
+                - code
+                - baseStockAmount
+                - name
+                - measurementUnit
+                - stock
+                - unitaryPrice
+                - publicPrice
+              properties:
+                barcode:
+                  type: string
+                code:
+                  type: string
+                baseStockAmount:
+                  type: number
+                  format: double
+                name:
+                  type: string
+                measurementUnit:
+                  type: string
+                stock:
+                  type: number
+                  format: double
+                unitaryPrice:
+                  type: number
+                  format: double
+                publicPrice:
+                  type: number
+                  format: double
+      responses:
+        "200":
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - barcode
+                  - code
+                  - baseStockAmount
+                  - name
+                  - measurementUnit
+                  - stock
+                  - unitaryPrice
+                  - publicPrice
+                properties:
+                  id:
+                    type: string
+                  barcode:
+                    type: string
+                  code:
+                    type: string
+                  baseStockAmount:
+                    type: number
+                    format: double
+                  name:
+                    type: string
+                  measurementUnit:
+                    type: string
+                  stock:
+                    type: number
+                    format: double
+                  unitaryPrice:
+                    type: number
+                    format: double
+                  publicPrice:
+                    type: number
+                    format: double
+    get:
+      tags:
+        - products
+      summary: Get a product by ID
+      parameters:
+        - name: productId
+          in: path
+          description: ID of the product to retrieve
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Product details
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - barcode
+                  - code
+                  - baseStockAmount
+                  - name
+                  - measurementUnit
+                  - stock
+                  - unitaryPrice
+                  - publicPrice
+                properties:
+                  id:
+                    type: string
+                  barcode:
+                    type: string
+                  code:
+                    type: string
+                  baseStockAmount:
+                    type: number
+                    format: double
+                  name:
+                    type: string
+                  measurementUnit:
+                    type: string
+                  stock:
+                    type: number
+                    format: double
+                  unitaryPrice:
+                    type: number
+                    format: double
+                  publicPrice:
+                    type: number
+                    format: double
+              example:
+                id: "product-1"
+                barcode: ""
+                code: "330750.51"
+                baseStockAmount: 3
+                name: "ESMALTE S.D. ALUMINIO FINO 3.785 LTS"
+                measurementUnit: "liter"
+                stock: 3
+                unitaryPrice: 273.7
+                publicPrice: 273.7
